@@ -21,6 +21,28 @@ export type Question = {
   created_at: string;
 };
 
+export type SQLQuestion = {
+  id: string;
+  title: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  category: string;
+  problem_url: string;
+  solution: string;
+  tags: string[];
+  created_at: string;
+};
+
+export type SQLUserProgress = {
+  id: string;
+  user_id: string;
+  question_id: string;
+  is_completed: boolean;
+  notes: string;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type UserProgress = {
   id: string;
   user_id: string;

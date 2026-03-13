@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, Question, UserProgress } from '../lib/supabase';
-import { LogOut, Search, Filter, BookOpen, Building2 } from 'lucide-react';
+import { LogOut, Search, Filter, BookOpen, Building2, Database } from 'lucide-react';
 import { QuestionList } from './QuestionList';
 import { SolutionModal } from './SolutionModal';
 import { CompanyQuestions } from './CompanyQuestions';
+import { SQLQuestions } from './SQLQuestions';
+import { ScrollToTop } from './ScrollToTop';
 
 export const Dashboard = () => {
   const { user, signOut } = useAuth();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [userProgress, setUserProgress] = useState<Map<string, UserProgress>>(new Map());
+  const [userProfile, setUserProfile] = useState<{ full_name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -17,11 +20,12 @@ export const Dashboard = () => {
   // const [selectedPlatform, setSelectedPlatform] = useState('All');
   const [showCompleted, setShowCompleted] = useState<'all' | 'completed' | 'pending'>('all');
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
-  const [activeTab, setActiveTab] = useState<'dsa' | 'companies'>('dsa');
+  const [activeTab, setActiveTab] = useState<'dsa' | 'companies' | 'sql'>('dsa');
 
   useEffect(() => {
     fetchQuestions();
     fetchUserProgress();
+    fetchUserProfile();
   }, []);
 
   const fetchQuestions = async () => {
@@ -45,6 +49,19 @@ export const Dashboard = () => {
     if (!error && data) {
       const progressMap = new Map(data.map(p => [p.question_id, p]));
       setUserProgress(progressMap);
+    }
+  };
+
+  const fetchUserProfile = async () => {
+    if (!user?.id) return;
+    const { data, error } = await supabase
+      .from('users')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    if (!error && data) {
+      setUserProfile(data);
     }
   };
 
@@ -136,6 +153,12 @@ export const Dashboard = () => {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {userProfile && (
+          <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl shadow-lg p-6 mb-6 text-white">
+            <h1 className="text-2xl font-bold">Welcome, {userProfile.full_name}! 👋</h1>
+            <p className="text-blue-100 mt-1">Ready to practice some coding problems?</p>
+          </div>
+        )}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
           <div className="flex space-x-1">
             <button
@@ -148,6 +171,17 @@ export const Dashboard = () => {
             >
               <BookOpen className="w-4 h-4" />
               <span>DSA Practice</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('sql')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                activeTab === 'sql'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Database className="w-4 h-4" />
+              <span>SQL Practice</span>
             </button>
             <button
               onClick={() => setActiveTab('companies')}
@@ -262,6 +296,8 @@ export const Dashboard = () => {
           </>
         )}
 
+        {activeTab === 'sql' && <SQLQuestions />}
+
         {activeTab === 'companies' && <CompanyQuestions />}
       </div>
 
@@ -271,6 +307,8 @@ export const Dashboard = () => {
           onClose={() => setSelectedQuestion(null)}
         />
       )}
+
+      <ScrollToTop />
     </div>
   );
 };
