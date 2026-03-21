@@ -186,6 +186,42 @@ CREATE POLICY "Users can delete own methods"
   TO authenticated
   USING (auth.uid() = user_id);
 
+-- Create user_questions table for personal question + code entries
+CREATE TABLE IF NOT EXISTS user_questions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  prompt text NOT NULL,
+  solution text NOT NULL,
+  tags text[] DEFAULT '{}',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- Enable RLS and create policies for user_questions (same as methods)
+ALTER TABLE user_questions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can read user_questions"
+  ON user_questions FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Users can insert own user_questions"
+  ON user_questions FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own user_questions"
+  ON user_questions FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own user_questions"
+  ON user_questions FOR DELETE
+  TO authenticated
+  USING (auth.uid() = user_id);
+
 -- Example seed data for methods (replace <YOUR_USER_ID> with a real user UUID)
 -- INSERT INTO methods (user_id, title, description, code, tags) VALUES
 --   ('<YOUR_USER_ID>', 'Check Prime', 'Returns true if a number is prime.', 'bool isPrime(int n) { if (n < 2) return false; for (int i = 2; i * i <= n; ++i) if (n % i == 0) return false; return true; }', ARRAY['prime', 'math']),

@@ -47,6 +47,20 @@ export type Method = {
   created_at: string;
 };
 
+export type UserQuestion = {
+  id: string;
+  user_id: string;
+  title: string;
+  prompt: string;
+  solution: string;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+  users?: {
+    full_name: string;
+  };
+};
+
 export type SQLUserProgress = {
   id: string;
   user_id: string;

@@ -7,6 +7,7 @@ import { SolutionModal } from './SolutionModal';
 import { CompanyQuestions } from './CompanyQuestions';
 import { SQLQuestions } from './SQLQuestions';
 import { Methods } from './Methods';
+import { MyQuestions } from './MyQuestions';
 import { ScrollToTop } from './ScrollToTop';
 
 export const Dashboard = () => {
@@ -21,7 +22,7 @@ export const Dashboard = () => {
   // const [selectedPlatform, setSelectedPlatform] = useState('All');
   const [showCompleted, setShowCompleted] = useState<'all' | 'completed' | 'pending'>('all');
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
-  const [activeTab, setActiveTab] = useState<'dsa' | 'companies' | 'sql' | 'methods'>('dsa');
+  const [activeTab, setActiveTab] = useState<'dsa' | 'companies' | 'sql' | 'methods' | 'myquestions'>('dsa');
 
   useEffect(() => {
     fetchQuestions();
@@ -196,6 +197,17 @@ export const Dashboard = () => {
               <span>Methods</span>
             </button>
             <button
+              onClick={() => setActiveTab('myquestions')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                activeTab === 'myquestions'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>Community Questions</span>
+            </button>
+            <button
               onClick={() => setActiveTab('companies')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                 activeTab === 'companies'
@@ -311,6 +323,8 @@ export const Dashboard = () => {
         {activeTab === 'sql' && <SQLQuestions />}
 
         {activeTab === 'methods' && <Methods />}
+
+        {activeTab === 'myquestions' && <MyQuestions />}
 
         {activeTab === 'companies' && <CompanyQuestions />}
       </div>
