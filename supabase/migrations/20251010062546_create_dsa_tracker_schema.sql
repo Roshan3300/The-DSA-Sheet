@@ -147,6 +147,51 @@ CREATE POLICY "Users can delete own progress"
   TO authenticated
   USING (auth.uid() = user_id);
 
+-- Create methods table
+CREATE TABLE IF NOT EXISTS methods (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  description text DEFAULT '',
+  code text DEFAULT '',
+  tags text[] DEFAULT '{}',
+  is_favorite boolean DEFAULT false,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Ensure existing schemas have the favorite column (safe to run multiple times)
+ALTER TABLE methods
+  ADD COLUMN IF NOT EXISTS is_favorite boolean DEFAULT false;
+
+ALTER TABLE methods ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can read methods"
+  ON methods FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Users can insert own methods"
+  ON methods FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own methods"
+  ON methods FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own methods"
+  ON methods FOR DELETE
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+-- Example seed data for methods (replace <YOUR_USER_ID> with a real user UUID)
+-- INSERT INTO methods (user_id, title, description, code, tags) VALUES
+--   ('<YOUR_USER_ID>', 'Check Prime', 'Returns true if a number is prime.', 'bool isPrime(int n) { if (n < 2) return false; for (int i = 2; i * i <= n; ++i) if (n % i == 0) return false; return true; }', ARRAY['prime', 'math']),
+--   ('<YOUR_USER_ID>', 'Palindrome String Check', 'Checks if a string is a palindrome.', 'bool isPalindrome(const std::string &s) { int i = 0, j = s.size() - 1; while (i < j) { if (s[i++] != s[j--]) return false; } return true; }', ARRAY['string', 'palindrome']),
+--   ('<YOUR_USER_ID>', 'Fibonacci (Iterative)', 'Generates fibonacci number iteratively.', 'int fib(int n) { if (n < 2) return n; int a = 0, b = 1; for (int i = 2; i <= n; ++i) { int c = a + b; a = b; b = c; } return b; }', ARRAY['math', 'dp']);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_questions_category ON questions(category);
 CREATE INDEX IF NOT EXISTS idx_questions_difficulty ON questions(difficulty);

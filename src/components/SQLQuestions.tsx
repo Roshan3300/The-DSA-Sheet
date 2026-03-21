@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase, SQLQuestion, SQLUserProgress } from '../lib/supabase';
-import { Search, Filter, Database } from 'lucide-react';
+import { supabase, Question, SQLUserProgress } from '../lib/supabase';
+import { Search, Filter } from 'lucide-react';
 import { QuestionList } from './QuestionList';
 import { SolutionModal } from './SolutionModal';
 
 export const SQLQuestions = () => {
   const { user } = useAuth();
-  const [questions, setQuestions] = useState<SQLQuestion[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [userProgress, setUserProgress] = useState<Map<string, SQLUserProgress>>(new Map());
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
   const [showCompleted, setShowCompleted] = useState<'all' | 'completed' | 'pending'>('all');
-  const [selectedQuestion, setSelectedQuestion] = useState<SQLQuestion | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
 
   useEffect(() => {
     fetchSQLQuestions();
@@ -28,7 +28,8 @@ export const SQLQuestions = () => {
       .order('category', { ascending: true });
 
     if (!error && data) {
-      setQuestions(data);
+      const mapped = data.map((q: any) => ({ ...q, platform: 'SQL' }));
+      setQuestions(mapped);
     }
     setLoading(false);
   };

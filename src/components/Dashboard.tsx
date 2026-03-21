@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, Question, UserProgress } from '../lib/supabase';
-import { LogOut, Search, Filter, BookOpen, Building2, Database } from 'lucide-react';
+import { LogOut, Search, Filter, BookOpen, Building2, Database, Code2 } from 'lucide-react';
 import { QuestionList } from './QuestionList';
 import { SolutionModal } from './SolutionModal';
 import { CompanyQuestions } from './CompanyQuestions';
 import { SQLQuestions } from './SQLQuestions';
+import { Methods } from './Methods';
 import { ScrollToTop } from './ScrollToTop';
 
 export const Dashboard = () => {
@@ -20,7 +21,7 @@ export const Dashboard = () => {
   // const [selectedPlatform, setSelectedPlatform] = useState('All');
   const [showCompleted, setShowCompleted] = useState<'all' | 'completed' | 'pending'>('all');
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
-  const [activeTab, setActiveTab] = useState<'dsa' | 'companies' | 'sql'>('dsa');
+  const [activeTab, setActiveTab] = useState<'dsa' | 'companies' | 'sql' | 'methods'>('dsa');
 
   useEffect(() => {
     fetchQuestions();
@@ -160,7 +161,7 @@ export const Dashboard = () => {
           </div>
         )}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <div className="flex space-x-1">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setActiveTab('dsa')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
@@ -182,6 +183,17 @@ export const Dashboard = () => {
             >
               <Database className="w-4 h-4" />
               <span>SQL Practice</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('methods')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                activeTab === 'methods'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Code2 className="w-4 h-4" />
+              <span>Methods</span>
             </button>
             <button
               onClick={() => setActiveTab('companies')}
@@ -297,6 +309,8 @@ export const Dashboard = () => {
         )}
 
         {activeTab === 'sql' && <SQLQuestions />}
+
+        {activeTab === 'methods' && <Methods />}
 
         {activeTab === 'companies' && <CompanyQuestions />}
       </div>
