@@ -7,6 +7,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null }>;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signInWithGoogle: () => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -43,6 +44,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        // Ensure the confirmation link returns to the app so users can continue
+        emailRedirectTo: typeof window !== 'undefined' ? window.location.origin + '/' : undefined,
+      },
     });
 
     if (!error && data.user) {
@@ -57,9 +62,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
+    });
+
+    if (error) return { error };
+
+    // If the project requires email confirmations but a user signs in before confirming,
+    // deny access and prompt them to verify their email.
+    const user = data?.user;
+    const emailConfirmed = (user as any)?.email_confirmed_at || (user as any)?.confirmed_at;
+    if (user && !emailConfirmed) {
+      // Sign out any session and return a friendly error
+      await supabase.auth.signOut();
+      const authErr = { name: 'EmailNotVerified', message: 'Please verify your email address before signing in.' } as unknown as AuthError;
+      return { error: authErr };
+    }
+
+    return { error: null };
+  };
+
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: typeof window !== 'undefined' ? window.location.origin + '/' : undefined,
+      },
     });
     return { error };
   };
@@ -69,7 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signUp, signIn, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );

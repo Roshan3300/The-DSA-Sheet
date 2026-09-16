@@ -14,6 +14,19 @@
   .animate-shake {
     animation: shake 0.5s ease-in-out;
   }
+
+  .tab-panel {
+    width: 100%;
+  }
+
+  .tab-panel-hidden {
+    display: none;
+  }
+
+  .tab-panel-active {
+    display: block;
+    animation: tabPanelIn 0.28s ease-out both;
+  }
 }
 
 @keyframes fadeIn {
@@ -45,6 +58,15 @@
   }
   75% {
     transform: translateX(10px);
+  }
+}
+
+@keyframes tabPanelIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 

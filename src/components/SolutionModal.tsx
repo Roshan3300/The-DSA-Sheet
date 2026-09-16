@@ -45,9 +45,7 @@ export const SolutionModal = ({ question, onClose }: SolutionModalProps) => {
               </div>
             </div>
             <button
-              type="button"
               onClick={onClose}
-              aria-label="Close modal"
               className="ml-4 p-2 hover:bg-white/20 rounded-lg transition-all duration-300 transform hover:scale-110"
             >
               <X className="w-6 h-6" />
@@ -74,8 +72,8 @@ export const SolutionModal = ({ question, onClose }: SolutionModalProps) => {
 
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-3">Solution</h3>
-            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-              <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono leading-relaxed">
+            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border border-blue-200">
+              <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono leading-relaxed">
                 {question.solution || 'Solution coming soon...'}
               </pre>
             </div>

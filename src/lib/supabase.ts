@@ -22,6 +22,7 @@ export type Question = {
   problem_url: string;
   solution: string;
   tags: string[];
+  display_order?: number;
   created_at: string;
 };
 
@@ -87,6 +88,7 @@ export type User = {
   id: string;
   email: string;
   full_name: string;
+  is_admin?: boolean;
   created_at: string;
   updated_at: string;
 };

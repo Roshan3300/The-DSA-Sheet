@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, UserQuestion } from '../lib/supabase';
-import { Plus, BookOpen, X, Search, Edit3, Trash2 } from 'lucide-react';
+import { Plus, BookOpen, X, Search, Edit3, Trash2, Eye } from 'lucide-react';
 
 export const MyQuestions = () => {
   const { user } = useAuth();
@@ -9,6 +9,7 @@ export const MyQuestions = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<UserQuestion | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<UserQuestion | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [title, setTitle] = useState('');
@@ -17,6 +18,23 @@ export const MyQuestions = () => {
   const [tags, setTags] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!selectedQuestion) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectedQuestion(null);
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selectedQuestion]);
 
   useEffect(() => {
     fetchQuestions();
@@ -162,11 +180,11 @@ export const MyQuestions = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <BookOpen className="w-6 h-6 text-indigo-600" />
-            Community Questions & Solutions
+            <BookOpen className="w-6 h-6 text-blue-600" />
+            Coding Questions & Solutions
           </h2>
           <p className="text-sm text-gray-600">
-            Browse questions and solutions shared by the community. Add your own questions with code solutions - only you can edit your entries.
+            Browse questions and solutions shared by the Coding. Add your own questions with code solutions - only you can edit your entries.
           </p>
         </div>
 
@@ -180,7 +198,7 @@ export const MyQuestions = () => {
             setTags('');
             setShowForm(true);
           }}
-          className="inline-flex items-center gap-2 px-5 py-3 bg-indigo-500 text-white rounded-xl shadow-lg hover:bg-indigo-600 transition-all duration-300"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-blue-500 text-white rounded-xl shadow-lg hover:bg-blue-600 transition-all duration-300"
         >
           <Plus className="w-4 h-4" />
           Add Question
@@ -193,8 +211,8 @@ export const MyQuestions = () => {
           <input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search community questions..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300"
+            placeholder="Search Coding questions..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
           />
         </div>
         <div className="text-sm text-gray-500">
@@ -217,12 +235,20 @@ export const MyQuestions = () => {
                 {q.tags.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {q.tags.map((tag) => (
-                      <span key={tag} className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs">
+                      <span key={tag} className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">
                         {tag}
                       </span>
                     ))}
                   </div>
                 )}
+                <button
+                  type="button"
+                  onClick={() => setSelectedQuestion(q)}
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100"
+                >
+                  <Eye className="h-4 w-4" />
+                  View full question
+                </button>
               </div>
               {q.user_id === user?.id && (
                 <div className="flex flex-col items-end gap-2">
@@ -245,18 +271,71 @@ export const MyQuestions = () => {
             </div>
             <div className="mt-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
               <h4 className="text-sm font-semibold text-gray-700 mb-1">Solution / Code</h4>
-              <pre className="whitespace-pre-wrap text-xs text-gray-800 font-mono max-h-36 overflow-y-auto">{q.solution}</pre>
+              <pre className="whitespace-pre-wrap text-xs text-gray-800 font-mono line-clamp-5">{q.solution}</pre>
             </div>
           </div>
         ))}
 
         {filtered.length === 0 && (
-          <div className="text-gray-500">No community questions yet. Be the first to add one above!</div>
+          <div className="text-gray-500">No Coding questions yet. Be the first to add one above!</div>
         )}
       </div>
 
+      {selectedQuestion && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-transparent p-2 sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="coding-question-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedQuestion(null);
+          }}
+        >
+          <div className="flex h-[min(90dvh,720px)] max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:w-full">
+            <div className="flex items-start justify-between gap-4 bg-gradient-to-r from-blue-500 to-cyan-500 p-5 text-white sm:p-6">
+              <div className="min-w-0">
+                <h2 id="coding-question-title" className="text-xl font-bold sm:text-2xl">{selectedQuestion.title}</h2>
+                <p className="mt-1 text-sm text-blue-100">By {selectedQuestion.users?.full_name || 'Unknown'}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedQuestion(null)}
+                aria-label="Close question"
+                className="flex-shrink-0 rounded-lg p-2 hover:bg-white/20"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="min-h-0 flex-1 overscroll-contain overflow-y-auto p-5 sm:p-6">
+              <section className="mb-6">
+                <h3 className="mb-2 text-base font-semibold text-gray-800">Question</h3>
+                <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
+                  {selectedQuestion.prompt}
+                </div>
+              </section>
+
+              <section>
+                <h3 className="mb-2 text-base font-semibold text-gray-800">Solution / Code</h3>
+                <pre className="max-h-[55vh] overscroll-contain overflow-auto rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50 p-4 text-sm leading-relaxed text-gray-800 whitespace-pre-wrap font-mono">
+                  {selectedQuestion.solution}
+                </pre>
+              </section>
+
+              {selectedQuestion.tags.length > 0 && (
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {selectedQuestion.tags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">{tag}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-transparent flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold text-gray-800">{editingQuestion ? 'Edit Question' : 'Add Question'}</h3>

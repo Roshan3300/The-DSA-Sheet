@@ -9,12 +9,13 @@ import { SQLQuestions } from './SQLQuestions';
 import { Methods } from './Methods';
 import { MyQuestions } from './MyQuestions';
 import { ScrollToTop } from './ScrollToTop';
+import { CppHandbook } from './CppHandbook';
 
 export const Dashboard = () => {
   const { user, signOut } = useAuth();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [userProgress, setUserProgress] = useState<Map<string, UserProgress>>(new Map());
-  const [userProfile, setUserProfile] = useState<{ full_name: string } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ full_name: string; is_admin?: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -22,7 +23,7 @@ export const Dashboard = () => {
   // const [selectedPlatform, setSelectedPlatform] = useState('All');
   const [showCompleted, setShowCompleted] = useState<'all' | 'completed' | 'pending'>('all');
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
-  const [activeTab, setActiveTab] = useState<'dsa' | 'companies' | 'sql' | 'methods' | 'myquestions'>('dsa');
+  const [activeTab, setActiveTab] = useState<'dsa' | 'companies' | 'sql' | 'methods' | 'myquestions' | 'cpp'>('dsa');
 
   useEffect(() => {
     fetchQuestions();
@@ -34,7 +35,8 @@ export const Dashboard = () => {
     const { data, error } = await supabase
       .from('questions')
       .select('*')
-      .order('category', { ascending: true });
+      .order('category', { ascending: true })
+      .order('display_order', { ascending: true });
 
     if (!error && data) {
       setQuestions(data);
@@ -58,13 +60,21 @@ export const Dashboard = () => {
     if (!user?.id) return;
     const { data, error } = await supabase
       .from('users')
-      .select('full_name')
+      .select('full_name, is_admin')
       .eq('id', user.id)
       .single();
 
     if (!error && data) {
       setUserProfile(data);
     }
+  };
+
+  const reorderQuestions = async (reorderedQuestions: Question[]) => {
+    setQuestions(reorderedQuestions.map((question, index) => ({ ...question, display_order: index })));
+    await Promise.all(reorderedQuestions.map((question, index) =>
+      supabase.from('questions').update({ display_order: index }).eq('id', question.id)
+    ));
+    fetchQuestions();
   };
 
   const toggleComplete = async (questionId: string) => {
@@ -205,8 +215,9 @@ export const Dashboard = () => {
               }`}
             >
               <BookOpen className="w-4 h-4" />
-              <span>Community Questions</span>
+              <span>Coding Questions</span>
             </button>
+            
             <button
               onClick={() => setActiveTab('companies')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
@@ -218,8 +229,23 @@ export const Dashboard = () => {
               <Building2 className="w-4 h-4" />
               <span>Company Questions</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('cpp')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                activeTab === 'cpp'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}   
+          >
+              <Code2 className="w-4 h-4" />
+              <span>C++ Handbook</span>
+            </button>
           </div>
         </div>
+              
+        <div className="tab-panels">
+        <div className={`tab-panel ${activeTab === 'dsa' ? 'tab-panel-active' : 'tab-panel-hidden'}`}>
         {activeTab === 'dsa' && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -316,17 +342,35 @@ export const Dashboard = () => {
               userProgress={userProgress}
               onToggleComplete={toggleComplete}
               onViewSolution={setSelectedQuestion}
+              isAdmin={userProfile?.is_admin === true}
+              table="questions"
+              onAdminChange={fetchQuestions}
+              onReorderQuestions={reorderQuestions}
             />
           </>
         )}
+        </div>
 
-        {activeTab === 'sql' && <SQLQuestions />}
+        <div className={`tab-panel ${activeTab === 'sql' ? 'tab-panel-active' : 'tab-panel-hidden'}`}>
+          <SQLQuestions />
+        </div>
 
-        {activeTab === 'methods' && <Methods />}
+        <div className={`tab-panel ${activeTab === 'methods' ? 'tab-panel-active' : 'tab-panel-hidden'}`}>
+          <Methods />
+        </div>
 
-        {activeTab === 'myquestions' && <MyQuestions />}
+        <div className={`tab-panel ${activeTab === 'myquestions' ? 'tab-panel-active' : 'tab-panel-hidden'}`}>
+          <MyQuestions />
+        </div>
 
-        {activeTab === 'companies' && <CompanyQuestions />}
+        <div className={`tab-panel ${activeTab === 'companies' ? 'tab-panel-active' : 'tab-panel-hidden'}`}>
+          <CompanyQuestions />
+        </div>
+
+        <div className={`tab-panel ${activeTab === 'cpp' ? 'tab-panel-active' : 'tab-panel-hidden'}`}>
+          <CppHandbook />
+        </div>
+        </div>
       </div>
 
       {selectedQuestion && (

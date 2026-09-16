@@ -21,3 +21,9 @@ dist-ssr
 *.sln
 *.sw?
 .env
+.env.example
+supabase/
+UPDATE_WEBSITE_INSTRUCTIONS.md
+dist
+COMPANY_FEATURES_README.md
+DSA_INDEX.md

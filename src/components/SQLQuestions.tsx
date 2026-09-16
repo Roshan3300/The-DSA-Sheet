@@ -15,23 +15,40 @@ export const SQLQuestions = () => {
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
   const [showCompleted, setShowCompleted] = useState<'all' | 'completed' | 'pending'>('all');
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     fetchSQLQuestions();
     fetchUserProgress();
+    fetchAdminStatus();
   }, []);
 
   const fetchSQLQuestions = async () => {
     const { data, error } = await supabase
       .from('sql_questions')
       .select('*')
-      .order('category', { ascending: true });
+      .order('category', { ascending: true })
+      .order('display_order', { ascending: true });
 
     if (!error && data) {
       const mapped = data.map((q: any) => ({ ...q, platform: 'SQL' }));
       setQuestions(mapped);
     }
     setLoading(false);
+  };
+
+  const fetchAdminStatus = async () => {
+    if (!user?.id) return;
+    const { data } = await supabase.from('users').select('is_admin').eq('id', user.id).single();
+    setIsAdmin(data?.is_admin === true);
+  };
+
+  const reorderQuestions = async (reorderedQuestions: Question[]) => {
+    setQuestions(reorderedQuestions.map((question, index) => ({ ...question, display_order: index })));
+    await Promise.all(reorderedQuestions.map((question, index) =>
+      supabase.from('sql_questions').update({ display_order: index }).eq('id', question.id)
+    ));
+    fetchSQLQuestions();
   };
 
   const fetchUserProgress = async () => {
@@ -207,6 +224,10 @@ export const SQLQuestions = () => {
         userProgress={userProgress}
         onToggleComplete={toggleComplete}
         onViewSolution={setSelectedQuestion}
+        isAdmin={isAdmin}
+        table="sql_questions"
+        onAdminChange={fetchSQLQuestions}
+        onReorderQuestions={reorderQuestions}
       />
 
       {selectedQuestion && (

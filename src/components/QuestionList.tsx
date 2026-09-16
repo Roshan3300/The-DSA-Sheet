@@ -1,14 +1,21 @@
+import { useState } from 'react';
 import { Question, UserProgress } from '../lib/supabase';
-import { ExternalLink, CheckCircle2, Circle, Eye } from 'lucide-react';
+import { ExternalLink, CheckCircle2, Circle, Eye, GripVertical } from 'lucide-react';
+import { QuestionAdminControls } from './QuestionAdminControls';
 
 interface QuestionListProps {
   questions: Question[];
   userProgress: Map<string, UserProgress>;
   onToggleComplete: (questionId: string) => void;
   onViewSolution: (question: Question) => void;
+  isAdmin?: boolean;
+  table?: 'questions' | 'sql_questions';
+  onAdminChange?: () => void;
+  onReorderQuestions?: (questions: Question[]) => void;
 }
 
-export const QuestionList = ({ questions, userProgress, onToggleComplete, onViewSolution }: QuestionListProps) => {
+export const QuestionList = ({ questions, userProgress, onToggleComplete, onViewSolution, isAdmin = false, table = 'questions', onAdminChange, onReorderQuestions }: QuestionListProps) => {
+  const [draggedId, setDraggedId] = useState<string | null>(null);
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'Easy': return 'text-green-600 bg-green-50 border-green-200';
@@ -37,17 +44,37 @@ export const QuestionList = ({ questions, userProgress, onToggleComplete, onView
 
   return (
     <div className="space-y-4">
+      {isAdmin && onAdminChange && (
+        <div className="flex justify-end">
+          <QuestionAdminControls isAdmin={isAdmin} table={table} nextOrder={questions.length} onSaved={onAdminChange} onDeleted={onAdminChange} />
+        </div>
+      )}
       {questions.map((question) => {
         const isCompleted = userProgress.get(question.id)?.is_completed || false;
 
         return (
           <div
             key={question.id}
+            draggable={isAdmin}
+            onDragStart={() => setDraggedId(question.id)}
+            onDragEnd={() => setDraggedId(null)}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={() => {
+              if (!draggedId || draggedId === question.id || !onReorderQuestions) return;
+              const fromIndex = questions.findIndex((item) => item.id === draggedId);
+              const toIndex = questions.findIndex((item) => item.id === question.id);
+              const reordered = [...questions];
+              const [moved] = reordered.splice(fromIndex, 1);
+              reordered.splice(toIndex, 0, moved);
+              setDraggedId(null);
+              onReorderQuestions(reordered);
+            }}
             className={`bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-l-4 transform hover:-translate-y-1 ${
               isCompleted ? 'border-green-500 bg-green-50/30' : 'border-blue-500'
             }`}
           >
-            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-4">
+              {isAdmin && <GripVertical className="mt-1 h-5 w-5 flex-shrink-0 cursor-grab text-gray-400 active:cursor-grabbing" aria-label="Drag to reorder" />}
               <div className="flex items-start space-x-4 flex-1">
                 <button
                   type="button"
@@ -94,7 +121,17 @@ export const QuestionList = ({ questions, userProgress, onToggleComplete, onView
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col items-end gap-2 sm:flex-row">
+                {isAdmin && onAdminChange && (
+                  <QuestionAdminControls
+                    question={question}
+                    isAdmin={isAdmin}
+                    table={table}
+                    nextOrder={questions.length}
+                    onSaved={onAdminChange}
+                    onDeleted={onAdminChange}
+                  />
+                )}
                 <a
                   href={question.problem_url}
                   target="_blank"

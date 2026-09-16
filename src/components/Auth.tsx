@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Code2, Mail, Lock, User } from 'lucide-react';
+import { Code2, Mail, Lock, User, Globe } from 'lucide-react';
 
 export const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -8,24 +8,43 @@ export const Auth = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, signInWithGoogle } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setMessage('');
     setLoading(true);
 
     try {
       if (isSignUp) {
         const { error } = await signUp(email, password, fullName);
         if (error) throw error;
+        setMessage('Check your email to verify your account.');
       } else {
         const { error } = await signIn(email, password);
         if (error) throw error;
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setMessage('');
+    setLoading(true);
+
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) throw error;
+      setMessage('Redirecting to Google...');
+    } catch (err: any) {
+      setError(err.message || 'Unable to sign in with Google.');
     } finally {
       setLoading(false);
     }
@@ -44,53 +63,70 @@ export const Auth = () => {
           <h2 className="text-3xl font-bold text-center mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
             The DSA Sheet
           </h2>
-          <p className="text-gray-600 text-center mb-8">
-            {isSignUp ? 'Create your account' : 'Welcome back!'}
-          </p>
+          <form onSubmit={handleSubmit} className="text-gray-600 text-center mb-8">
+{isSignUp && (
+  <div className="relative">
+    <label htmlFor="fullName" className="sr-only">
+      Full Name
+    </label>
+    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+    <input
+      id="fullName"
+      name="fullName"
+      type="text"
+      placeholder="Full Name"
+      value={fullName}
+      onChange={(e) => setFullName(e.target.value)}
+      className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+      required
+    />
+  </div>
+)}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {isSignUp && (
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Full Name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  required
-                />
-              </div>
-            )}
+<div className="relative">
+  <label htmlFor="email" className="sr-only">
+    Email
+  </label>
+  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+  <input
+    id="email"
+    name="email"
+    type="email"
+    placeholder="Email"
+    value={email}
+    onChange={(e) => setEmail(e.target.value)}
+    className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+    required
+  />
+</div>
 
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                required
-              />
-            </div>
-
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                required
-                minLength={6}
-              />
-            </div>
+<div className="relative">
+  <label htmlFor="password" className="sr-only">
+    Password
+  </label>
+  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+  <input
+    id="password"
+    name="password"
+    type="password"
+    placeholder="Password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+    required
+    minLength={6}
+  />
+</div>
 
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm animate-shake">
                 {error}
+              </div>
+            )}
+
+            {message && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">
+                {message}
               </div>
             )}
 
@@ -100,6 +136,18 @@ export const Auth = () => {
               className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Sign In'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="w-full mt-4 border border-gray-200 text-gray-700 py-3 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Globe className="w-5 h-5" />
+                Continue with Google
+              </div>
             </button>
           </form>
 
